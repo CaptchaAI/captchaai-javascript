@@ -1,0 +1,29 @@
+# Source (published package ships compiled dist/ only)
+src/
+
+# Dependencies
+node_modules/
+
+# Tests
+tests/
+
+# TypeScript config (dev-only)
+tsconfig.json
+
+# Git / npm ignore files
+.gitignore
+.npmignore
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env

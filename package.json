@@ -1,0 +1,48 @@
+{
+  "name": "captchaai-javascript",
+  "version": "1.0.0",
+  "description": "CaptchaAI Node.js TypeScript SDK",
+  "author": "Dev@Captchaai <dev@captchaai.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CaptchaAI/captchaai-javascript.git"
+  },
+  "homepage": "https://github.com/CaptchaAI/captchaai-javascript#readme",
+  "bugs": {
+    "url": "https://github.com/CaptchaAI/captchaai-javascript/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "powershell -Command \"if (Test-Path dist) { Remove-Item -Recurse -Force dist }\"",
+    "test": "vitest run --config tests/vitest.config.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "captcha",
+    "captchaai",
+    "sdk",
+    "typescript"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
