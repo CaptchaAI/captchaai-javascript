@@ -4,7 +4,7 @@ Copy-paste cookbook for every captcha type and SDK feature. For API reference an
 
 ---
 
-## Table of Contents
+## Table of Content
 
 - [Prerequisites](#prerequisites)
 - [CaptchaAI client setup](#captchaai-client-setup)
