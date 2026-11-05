@@ -1,13 +1,24 @@
-# CaptchaAI TypeScript SDK
+# CaptchaAI TypeScript & Node.js SDK
 
-Node.js TypeScript client for the [CaptchaAI](https://captchaai.com) captcha-solving API.
+<p align="left">
+  <a href="https://www.npmjs.com/package/captchaai-javascript"><img src="https://img.shields.io/npm/v/captchaai-javascript?label=npm&logo=npm" alt="npm" /></a>
+  <a href="https://github.com/CaptchaAI/captchaai-javascript/releases"><img src="https://img.shields.io/github/v/release/CaptchaAI/captchaai-javascript?label=Release" alt="GitHub Release" /></a>
+  <a href="https://docs.captchaai.com/"><img src="https://img.shields.io/badge/Docs-docs.captchaai.com-blue" alt="Documentation" /></a>
+  <a href="https://chromewebstore.google.com/detail/fnnmnnfpdnlkccecmiicejhimhkbolhk?utm_source=item-share-cb"><img src="https://img.shields.io/chrome-web-store/v/fnnmnnfpdnlkccecmiicejhimhkbolhk?label=Chrome%20Extension&logo=googlechrome" alt="Chrome Extension" /></a>
+  <a href="https://github.com/CaptchaAI/captchaai-javascript/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License" /></a>
+</p>
 
-Call one method per captcha type; the SDK handles HTTP, polling, retries, and error mapping.
+CaptchaAI Node.js & TypeScript SDK — an official CAPTCHA solver and solving API client for reCAPTCHA v2/v3/Enterprise, Cloudflare Turnstile, Cloudflare Challenge, GeeTest v3, and image CAPTCHAs.
+
+Call one method per captcha type; the SDK handles HTTP, polling, retries, and typed error mapping with zero external runtime dependencies.
+
+For full copy-paste examples of every captcha type and feature, see [EXAMPLES.md](https://github.com/CaptchaAI/captchaai-javascript/blob/main/EXAMPLES.md).
 
 ---
 
 ## Table of Contents
 
+- [Examples](https://github.com/CaptchaAI/captchaai-javascript/blob/main/EXAMPLES.md)
 - [Installation](#installation)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
@@ -20,10 +31,10 @@ Call one method per captcha type; the SDK handles HTTP, polling, retries, and er
 - [reCAPTCHA v3](#recaptcha-v3)
 - [Cloudflare Turnstile](#cloudflare-turnstile)
 - [Cloudflare Challenge](#cloudflare-challenge)
-- [GeeTest](#geetest)
-- [CaptchaFox](#captchafox)
-- [Friendly Captcha](#friendly-captcha)
-- [Lemin](#lemin)
+- [GeeTest v3](#geetest-v3)
+- [CaptchaFox (beta)](#captchafox-beta)
+- [Friendly Captcha (beta)](#friendly-captcha-beta)
+- [Lemin (beta)](#lemin-beta)
 - [Other methods](#other-methods)
 - [Error handling](#error-handling)
 - [AsyncCaptchaAI](#asynccaptchaai)
@@ -40,7 +51,7 @@ npm install captchaai-javascript
 
 ## Requirements
 
-Node.js **>= 18** (uses native `fetch` and `AbortSignal.timeout`).
+Node.js **>= 18** (uses native `fetch` and `AbortSignal.timeout`). Zero external runtime dependencies.
 
 ## Quick start
 
@@ -60,7 +71,7 @@ await solver.close();
 
 ## Configuration
 
-Create a client with your API key. The constructor validates the key and starts a background `threadsInfo` call to read your account thread cap.
+Create a client with your API key from [CaptchaAI](https://captchaai.com/). The constructor validates the key and starts a background `threadsInfo` call to read your account thread cap.
 
 ```ts
 import { CaptchaAI } from "captchaai-javascript";
@@ -149,9 +160,8 @@ Solve a tile-selection captcha. `gridSize` must be `"3x3"` or `"4x4"`. `solution
 const result = await solver.grid(
   "grid.png",
   "select all traffic lights",
-  "3x3"
+  { gridSize: "3x3" }
 );
-
 console.log(result.solution);
 ```
 
@@ -159,14 +169,11 @@ console.log(result.solution);
 
 ## BLS captcha
 
-Solve a BLS multi-image captcha. Pass exactly **9** images (path/URL/base64/`Uint8Array` each). `solution` is a list of cell indices.
+Solve a BLS multi-image captcha. Pass exactly 9 images (path, URL, base64, or `Uint8Array` each). `solution` is a list of cell indices.
 
 ```ts
-const result = await solver.bls(
-  Array.from({ length: 9 }, (_, i) => `img${i}.png`),
-  "YOUR_INSTRUCTIONS"
-);
-
+const images = Array.from({ length: 9 }, (_, i) => `img${i}.png`);
+const result = await solver.bls(images, "YOUR_INSTRUCTIONS");
 console.log(result.solution);
 ```
 
@@ -174,9 +181,7 @@ console.log(result.solution);
 
 ## reCAPTCHA v2
 
-Solve reCAPTCHA v2 (standard, invisible, or enterprise). Pass `sitekey` and page `url`. Enterprise results include `userAgent`.
-
-If both `enterprise` and `invisible` are set, `enterprise` takes precedence.
+Solve reCAPTCHA v2 (standard, invisible, or enterprise).
 
 ```ts
 // Standard
@@ -187,156 +192,142 @@ const result = await solver.recaptchaV2(
 console.log(result.solution);
 
 // Invisible
-await solver.recaptchaV2("YOUR_SITEKEY", "https://example.com", {
-  invisible: true,
-});
+const invisibleResult = await solver.recaptchaV2(
+  "YOUR_SITEKEY",
+  "https://example.com",
+  { invisible: true }
+);
 
-// Enterprise (optional action; result may include userAgent)
-const enterprise = await solver.recaptchaV2("YOUR_SITEKEY", "https://example.com", {
-  enterprise: true,
-  action: "login",
-});
-console.log(enterprise.solution, enterprise.userAgent);
+// Enterprise
+const enterpriseResult = await solver.recaptchaV2(
+  "YOUR_SITEKEY",
+  "https://example.com",
+  { enterprise: true, action: "login" }
+);
+console.log(enterpriseResult.solution);
+console.log(enterpriseResult.userAgent);
 ```
-
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
 
 ---
 
 ## reCAPTCHA v3
 
-Solve reCAPTCHA v3 (standard or enterprise). `action` is required — the SDK validates it before submit.
+Solve reCAPTCHA v3. `minScore` defaults to `0.3`.
 
 ```ts
-const result = await solver.recaptchaV3("YOUR_SITEKEY", "https://example.com", {
-  action: "login",
-  minScore: 0.3,
-});
+// Standard
+const result = await solver.recaptchaV3(
+  "YOUR_SITEKEY",
+  "https://example.com",
+  "verify",
+  0.7
+);
 console.log(result.solution);
 
 // Enterprise
-const enterprise = await solver.recaptchaV3("YOUR_SITEKEY", "https://example.com", {
-  action: "login",
-  enterprise: true,
-});
-console.log(enterprise.solution, enterprise.userAgent);
+const entResult = await solver.recaptchaV3(
+  "YOUR_SITEKEY",
+  "https://example.com",
+  "login",
+  0.9,
+  { enterprise: true }
+);
 ```
-
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
 
 ---
 
 ## Cloudflare Turnstile
 
-Solve a Cloudflare Turnstile widget.
+Solve Cloudflare Turnstile.
 
 ```ts
 const result = await solver.turnstile(
-  "YOUR_SITEKEY",
-  "https://example.com"
+  "0x4AAAAAAAB...",
+  "https://example.com",
+  { action: "login" }
 );
-
 console.log(result.solution);
 ```
-
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
 
 ---
 
 ## Cloudflare Challenge
 
-Solve a Cloudflare interstitial challenge page. A **proxy is mandatory** (client-level or per-call). The result includes `userAgent` to reuse on the target site.
+Solve Cloudflare Challenge (5s / Managed / Non-Interactive). **A working proxy is mandatory.**
 
 ```ts
-const solver = new CaptchaAI({
-  apiKey: "YOUR_32_CHAR_API_KEY",
-  proxy: "user:pass@host:port",
-  proxyType: "HTTP",
-});
-
-const result = await solver.cloudflareChallenge("https://example.com");
-console.log(result.solution, result.userAgent);
+const result = await solver.cloudflareChallenge(
+  "https://example.com",
+  "<html>...</html>",                 // full page HTML
+  "user:pass@host:port",             // required
+  "HTTP",                            // required
+  "Mozilla/5.0 ..."                  // must match the session that fetched the HTML
+);
+console.log(result.solution);         // clearance token
 ```
-
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
 
 ---
 
-## GeeTest
+## GeeTest v3
 
-Solve GeeTest v3. `solution` is an object with `challenge`, `validate`, and `seccode`.
+Solve GeeTest v3. Requires `gt`, `challenge`, and `url`.
 
 ```ts
-const result = await solver.geetest(
+const result = await solver.geetestV3(
   "YOUR_GT",
   "YOUR_CHALLENGE",
   "https://example.com"
 );
+console.log(result.solution);
+// { geetest_challenge, geetest_validate, geetest_seccode }
+```
 
+---
+
+## CaptchaFox (beta)
+
+Solve CaptchaFox. **A working proxy is mandatory.**
+
+```ts
+const result = await solver.captchafox(
+  "YOUR_SITEKEY",
+  "https://example.com",
+  "user:pass@host:port",
+  "HTTP"
+);
 console.log(result.solution);
 ```
 
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
-
 ---
 
-## CaptchaFox
+## Friendly Captcha (beta)
 
-Solve a CaptchaFox slider challenge. A **proxy is mandatory**. Reuse `result.userAgent` when submitting the token.
-
-```ts
-const solver = new CaptchaAI({
-  apiKey: "YOUR_32_CHAR_API_KEY",
-  proxy: "user:pass@host:port",
-  proxyType: "HTTP",
-});
-
-const result = await solver.captchafox(
-  "YOUR_SITEKEY",
-  "https://example.com"
-);
-
-console.log(result.solution, result.userAgent);
-```
-
-Optional per-call options: `cookies`, `userAgent`, `proxy`, `proxyType`.
-
----
-
-## Friendly Captcha
-
-Solve a Friendly Captcha proof-of-work challenge. No proxy is required.
+Solve Friendly Captcha (v1 or v2). No proxy is required.
 
 ```ts
 const result = await solver.friendlyCaptcha(
   "YOUR_SITEKEY",
   "https://example.com",
-  { version: "v1" }   // optional: "v1" or "v2"
+  { version: "v1" }
 );
-
 console.log(result.solution);
 ```
 
-Optional per-call options: `proxy`, `proxyType`.
-
 ---
 
-## Lemin
+## Lemin (beta)
 
-Solve a Lemin puzzle. `solution` is an object with `answer` and `challenge_uuid`.
+Solve Lemin puzzle.
 
 ```ts
 const result = await solver.lemin(
   "YOUR_CAPTCHA_ID",
   "lemin-cropped-captcha",
-  "https://example.com",
-  { apiServer: "api.leminnow.com" }   // optional
+  "https://example.com"
 );
-
 console.log(result.solution);
+// { answer, challenge_uuid }
 ```
-
-Optional per-call options: `proxy`, `proxyType`.
 
 ---
 
@@ -348,12 +339,12 @@ CaptchaAI is thread-based. Check current usage:
 
 ```ts
 const info = await solver.threadsInfo();
-// { threads: 10, workingThreads: 3 }
+// { threads: 10, working_threads: 3 }
 ```
 
 ### Manual submit / fetch
 
-Submit now and poll later. The first argument is a registry type name (snake_case). Params use API field names (`googlekey`, `pageurl`, etc.):
+Submit now and poll later:
 
 ```ts
 const taskId = await solver.send("recaptcha_v2", {
@@ -364,8 +355,6 @@ const taskId = await solver.send("recaptcha_v2", {
 const result = await solver.getResult("recaptcha_v2", taskId);
 console.log(result.solution);
 ```
-
-Registry type names: `normal`, `grid`, `bls`, `recaptcha_v2`, `recaptcha_v2_invisible`, `recaptcha_v2_enterprise`, `recaptcha_v3`, `recaptcha_v3_enterprise`, `turnstile`, `cloudflare_challenge`, `geetest`, `captchafox`, `friendly_captcha`, `lemin`.
 
 ### Close
 
@@ -410,7 +399,7 @@ try {
   } else if (error instanceof ProxyError) {
     // bad proxy or proxy connection failed
   } else if (error instanceof ThreadLimitError) {
-    // all account threads busy (and retries skipped or exhausted)
+    // all account threads busy
   } else if (error instanceof NoThreadsError) {
     // account expired or has no active plan
   } else if (error instanceof UnsolvableError) {
@@ -426,55 +415,6 @@ try {
   }
 }
 ```
-
-| Error | Typical cause |
-|-------|---------------|
-| `InvalidKeyError` | Key not 32 characters, or API rejected the key |
-| `ValidationError` | Missing/invalid params, bad image, unknown captcha type, proxy required but missing |
-| `ProxyError` | Bad proxy or proxy connection failed |
-| `ThreadLimitError` | All account threads busy; local in-flight cap reached when `autoRetry` is `false` |
-| `NoThreadsError` | Account expired or has no active plan |
-| `UnsolvableError` | Service could not solve the captcha |
-| `NetworkError` | HTTP transport failure contacting the API |
-| `TimeoutError` | Poll deadline exceeded before a result was ready |
-| `APIError` | Unexpected or malformed API response |
-
-### Retry behaviour
-
-| Setting | Behaviour |
-|---------|-----------|
-| `autoRetry: true` (default) | Retry transient submit/proxy errors with exponential backoff |
-| `autoRetry: false` | Raise immediately on transient errors; also fast-fails when the local in-flight count hits the thread cap |
-| `maxRetries: N` (`N > 0`) | Like `autoRetry: true`, capped at N submit attempts |
-| `maxRetries: 0` | Like `autoRetry: false` |
-
-`maxRetries` supersedes `autoRetry` when both are provided. Fatal errors (`InvalidKeyError`, `ValidationError`, `UnsolvableError`, `NoThreadsError`, and similar) always raise immediately.
-
----
-
-## AsyncCaptchaAI
-
-All solve methods on `CaptchaAI` already return Promises. `AsyncCaptchaAI` is an alternative entry point that awaits initialization (key validation + `threadsInfo`) before the client is returned.
-
-Create it with `await AsyncCaptchaAI.create(...)` — not `new AsyncCaptchaAI(...)`:
-
-```ts
-import { AsyncCaptchaAI } from "captchaai-javascript";
-
-const solver = await AsyncCaptchaAI.create({ apiKey: "YOUR_32_CHAR_API_KEY" });
-
-const result = await solver.turnstile(
-  "YOUR_SITEKEY",
-  "https://example.com"
-);
-
-console.log(result.solution);
-await solver.aclose();
-```
-
-`AsyncCaptchaAI` mirrors the same methods as `CaptchaAI` (`normal`, `recaptchaV2`, `send`, `getResult`, `threadsInfo`, etc.) and uses `aclose()` instead of `close()`.
-
-> Note: Unlike the Python SDK, this package does not provide an async context manager.
 
 ---
 
@@ -501,10 +441,14 @@ const result = await solver.recaptchaV2(
 );
 ```
 
-**Proxy is mandatory** for:
+---
 
-- `cloudflareChallenge`
-- `captchafox`
+## Resources & Links
+
+- 🌐 [Official Website](https://captchaai.com/)
+- 📘 [API Documentation](https://docs.captchaai.com/)
+- 📦 [npm Package](https://www.npmjs.com/package/captchaai-javascript)
+- 🧩 [Chrome Extension](https://chromewebstore.google.com/detail/fnnmnnfpdnlkccecmiicejhimhkbolhk?utm_source=item-share-cb)
 
 ---
 
